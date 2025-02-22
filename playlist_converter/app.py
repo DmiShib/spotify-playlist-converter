@@ -1,7 +1,7 @@
 import os
 import sys
 import configparser
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from requests import RequestException, HTTPError
 from .client import SpotifyClient
 from .read_file import get_playlists, PlaylistFile
@@ -32,22 +32,25 @@ def read_config(config_path: str) -> parser:
         config.read_file(config_file)
     return config
 
-def get_config_values(config: parser) -> Optional[Dict[str, str]]:
+def get_config_values(config: parser) -> Optional[Dict[str, Any]]:
     try:
         values = {
             "directory_path": config.get("FILE_INFO", "directory_path"),
             "data_order":     config.get("FILE_INFO", "data_order"),
             "data_delimiter": config.get("FILE_INFO", "data_delimiter"),
             "user_id":        config.get("API", "user_id"),
-            "access_token":   config.get("API", "access_token")
+            "client_id":      config.get("API", "client_id"),
+            "client_secret":  config.get("API", "client_secret"),
+            "enable_logs":    config.getboolean("DEBUG", "enable_logs", fallback=False),
+            "add_to_liked":   config.getboolean("PREFERENCES", "add_to_liked", fallback=False)
         }
     except configparser.Error as error:
         show_error(config_error_msg + error.message)
     else:
         return values
 
-def check_empty(mapping: Dict[str, str]) -> None:
-    empty_keys = [key for key in mapping if not mapping[key]]
+def check_empty(mapping: Dict[str, Any]):
+    empty_keys = [key for key in mapping if isinstance(mapping[key], str) and not mapping[key]]
     if empty_keys:
         quoted = quote_each_word(empty_keys)
         custom_msg = "Missing values for key(s) {}".format(quoted)
@@ -92,7 +95,13 @@ def run_app():
     check_empty(config)
     check_data_order(config["data_order"])
     files = get_playlist_files(config["directory_path"])
-    sp_client = SpotifyClient(config["access_token"], config["user_id"])
+    sp_client = SpotifyClient(
+        config["client_id"],
+        config["client_secret"],
+        config["user_id"],
+        config["enable_logs"],
+        config["add_to_liked"]
+    )
     delimiter, data_order = config["data_delimiter"], config["data_order"]
     convert_files(files, sp_client, delimiter, data_order)
 

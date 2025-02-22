@@ -4,165 +4,209 @@
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen?style=flat-square)](./tests)
 [![License: MIT](https://img.shields.io/github/license/pa-aggarwal/playlist-converter?color=orange&style=flat-square)](https://opensource.org/licenses/MIT)
 
-Convert a text file of songs to a playlist on your <a href="https://open.spotify.com/">Spotify account</a>. Create your playlists faster instead of manually searching for songs.
+Convert a text file of songs to a playlist on your <a href="https://open.spotify.com/">Spotify account</a> or add them to your Liked Songs. Create your playlists faster instead of manually searching for songs.
 
 ![Demo](./assets/demo.gif)
 
-Recorded using <a href="https://www.screentogif.com/">ScreenToGif</a>.
-
 ## Table of Contents
 
-* [How It Works](#how-it-works)
-* [Credits](#credits)
-* [Getting Started](#getting-started)
-    * [Prerequisites](#prerequisites)
-    * [Installation](#installation)
-    * [Configuration](#configuration)
-* [Usage](#usage)
-* [Contributing](#contributing)
-* [License](#license)
+- [Playlist Converter](#playlist-converter)
+  - [Table of Contents](#table-of-contents)
+  - [How It Works](#how-it-works)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+  - [Usage](#usage)
+    - [Converting Files to Playlists](#converting-files-to-playlists)
+      - [File Format](#file-format)
+      - [Creating New Playlists](#creating-new-playlists)
+      - [Adding to Liked Songs](#adding-to-liked-songs)
+    - [Managing Liked Songs](#managing-liked-songs)
+    - [Progress and Logging](#progress-and-logging)
+    - [Common Issues](#common-issues)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## How It Works
 
 * This application reads the contents of every text file in a directory on your computer
 * You must provide details of how your files are structured in a configuration file
 * Getting a temporary access token from Spotify authorizes this app to access/change your account data
-* Using the Python requests library, this application sends the data to Spotify's web API to create the playlist
+* Using the Python requests library, this application sends the data to Spotify's web API to create playlists or add songs to your Liked Songs
 
-## Credits
+## Prerequisites
 
-* <a href="https://developer.spotify.com/documentation/web-api/">Spotify Web API</a>
-* <a href="https://docs.python-requests.org/en/master/">Requests Library V2.25.1</a>
+* Spotify Account - If you don't have one, create it at [Spotify Signup](https://www.spotify.com/us/signup/)
+* Python 3.6+ - Download from [Python.org](https://www.python.org/downloads/)
 
-## Getting Started
+## Installation
 
-Before running this project locally, make sure you meet/install the prerequisites listed below. After meeting the prerequisites, follow the instructions in the [Installation](#installation) section.
-
-### Prerequisites
-
-#### Spotify Account
-
-If you don't already have a Spotify account, go to their <a href="https://www.spotify.com/us/signup/">sign up page</a> and create one.
-
-#### Python 3.6+
-
-You must have <a href="https://www.python.org/downloads/">Python</a> version 3.6 or greater installed on your computer.
-
-Once you've installed Python, open Git Bash or your preferred CLI on Windows, or Terminal on Linux/MAC. Run this command to verify you have the right version of Python:
-```
-python --version
-# Python 3.*
-```
-
-### Installation
-
-1\. Clone this repository on your machine.
-```
-git clone https://github.com/pa-aggarwal/playlist-converter.git
-```
-
-2\. Create a python virtual environment, activate it, and install the packages in the `requirements.txt` file.
-```
-# Navigate to directory
+1. Clone this repository:
+```bash
+git clone https://github.com/DmiShib/spotify-playlist-converter.git
 cd playlist-converter
+```
 
-# Create virtual environment 'venv'
+2. Create and activate virtual environment:
+```bash
 python -m venv venv
 
-# Activate virtual environment
-. venv/Scripts/activate
-
-# Install packages from requirements.txt
-python -m pip install -r requirements.txt
+# Windows
+venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate
 ```
 
-3\. You must create your own configuration file called `config.ini` in the config directory, by copying the template config `template.ini` file.
+3. Install requirements:
+```bash
+pip install -r requirements.txt
 ```
-# Copy the template config file
+
+4. Set up Spotify Application:
+   * Go to [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
+   * Log in with your Spotify account
+   * Redirect URIs: `http://localhost:8888/callback`
+   * Set the Web API checkbox to true
+   * Click "Create an App"
+   * Fill in the app name and description
+   * Click "Save"
+   * Note down your Client ID and Client Secret (you'll need these for config.ini)
+
+5. Create and configure config file:
+```bash
 cp config/template.ini config/config.ini
 ```
-Open the `config.ini` file in your preferred text editor and change the values of the config keys to match your file setup. See the [Configuration](#configuration) section for what these keys are and how to fill them in.
 
-4\. Visit https://developer.spotify.com/console/get-search-item/ to get a temporary access token from Spotify. Check mark the following scopes to authenticate this application:
-* user-library-read
-* playlist-modify-public
-* playlist-modify-private
-
-Copy and paste the access token into your configuration file under the `access_token` option.
-
-**Note:** Spotify's access tokens expire after 1 hour, so you'll need to repeat this step if you're using this application again at a later time.
-
-### Configuration
-
-What are the config keys and how do I fill them in?
-* `directory_path`: Absolute path to the directory containing the text file(s) you want to convert
-* `data_order`: `track artist` or `artist track` based on how songs are listed in your files.
-* `data_delimiter`: The characters separating track name from artist name(s), preferrably at least 3 chars long e.g. `---`, `###`
-* `user_id`: Your username on your spotify account
-* `access_token`: Token value from step 4 of [Installation](#installation)
-
-Here is an example file setup (location and contents), along with a configuration file:
-
-```
-$ pwd
-C:\Users\user\Desktop\playlists
-
-$ ls
-playlist-01.txt playlist-02.txt
-
-$ cat playlist-01.txt
-Name: My Playlist
-3005---Childish Gambino
-See You Again---Tyler, The Creator, Kali Uchis
-...
+Edit `config/config.ini` and fill in your Spotify credentials:
+```ini
+[API]
+user_id = your_spotify_username
+client_id = your_client_id_from_dashboard
+client_secret = your_client_secret_from_dashboard
 ```
 
-`config.ini`
-```
+When you first run the application, it will:
+1. Open your browser for Spotify authorization
+2. Ask you to log in to Spotify (if not already logged in)
+3. Request permission to manage your playlists and liked songs
+4. Redirect back to the application to complete setup
+
+## Configuration
+
+Edit `config/config.ini` with your settings:
+
+```ini
 [FILE_INFO]
-directory_path = C:\Users\user\Desktop\playlists
+directory_path = /path/to/your/music/files
 data_order = track artist
-data_delimiter = ---
+data_delimiter = ###
 
 [API]
-user_id = priyaaggarwal
-access_token = long-key-from-spotify
+user_id = your_spotify_username
+client_id = your_spotify_client_id
+client_secret = your_spotify_client_secret
+
+[DEBUG]
+enable_logs = false
+
+[PREFERENCES]
+add_to_liked = false
 ```
+
+Configuration options:
+* `directory_path`: Path to folder with your playlist files
+* `data_order`: Format of song entries (`track artist` or `artist track`)
+* `data_delimiter`: Characters separating track from artist (e.g. `###`, `---`)
+* `user_id`: Your Spotify username
+* `client_id`: Your Spotify API client ID
+* `client_secret`: Your Spotify API client secret
+* `enable_logs`: Show detailed logs (true/false)
+* `add_to_liked`: Add songs to Liked Songs instead of playlist (true/false)
 
 ## Usage
 
-Make sure you've completed steps from the [Installation](#installation) section before running this application. This includes making your configuration file and putting text files to convert in their own directory.
+### Converting Files to Playlists
 
-In the cloned repository with the venv activated, run this command to create your playlists:
+The application can work in two modes: creating new playlists or adding songs to Liked Songs. This is controlled by the `add_to_liked` setting in `config.ini`.
+
+#### File Format
+Your text files should contain songs in the following format:
 ```
+Track Name###Artist Name
+Another Track###Another Artist
+```
+
+Example file `my_playlist.txt`:
+```
+Bohemian Rhapsody###Queen
+Yesterday###The Beatles
+Imagine###John Lennon
+```
+
+#### Creating New Playlists
+1. Set in config.ini:
+```ini
+[PREFERENCES]
+add_to_liked = false
+```
+
+2. Place your playlist files in the directory specified in `directory_path`
+3. Run the converter:
+```bash
 python -m playlist_converter.app
 ```
-This may take a couple of minutes depending on how large your files are.
 
-You may see an error message if there was an issue trying to convert your files, like one of the following:
-* Missing configuration file or config keys
-* Invalid directory path
-* No text files found to convert
-* HTTP error from invalid access token or something else
+The application will:
+- Create a new private playlist for each text file
+- Name the playlist same as the file name (without .txt)
+- Search for each song and add it to the corresponding playlist
+- Show progress bar for each playlist conversion
 
-If you received no errors, then open your spotify account to see your new playlists.
-
-To check if tests are passing, run this command:
+#### Adding to Liked Songs
+1. Set in config.ini:
+```ini
+[PREFERENCES]
+add_to_liked = true
 ```
-python -m unittest discover -s tests
+
+2. Run the converter:
+```bash
+python -m playlist_converter.app
 ```
+
+The application will:
+- Read all songs from your text files
+- Add them directly to your Liked Songs collection
+- Show progress bar for the conversion
+
+### Managing Liked Songs
+
+To remove all songs from your Liked Songs collection:
+```bash
+python -m playlist_converter.clear_liked
+```
+
+**⚠️ Warning**: This will remove ALL songs from your Liked Songs. Use with caution!
+
+### Progress and Logging
+
+- For detailed logs about API requests and responses, set `enable_logs = true`
+- Without logs enabled, you'll see a progress bar showing conversion status
+- After completion, you'll see a success message with the number of tracks processed
+
+### Common Issues
+- If authorization fails, ensure your Client ID and Secret are correct
+- If songs aren't found, check the track/artist names and delimiter in your files
+- If you get API errors, your token might have expired - just run the app again
 
 ## Contributing
 
-Contributions and feedback for improvements as well as new features are welcome!
-1. Fork this repository.
-2. Create a new branch for your contribution (`git checkout -b new-feature`).
-3. Add your contribution, and write tests if needed.
-4. Ensure the test suite passes.
-5. Commit your changes to the branch (`git commit -m "My new feature does X"`).
-6. Push to the branch (`git push origin new-feature`).
-7. Open a pull request.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-Distributed under the MIT License. See [LICENSE.txt](https://github.com/pa-aggarwal/playlist-converter/blob/master/LICENSE.txt) for more information.
+Distributed under the MIT License. See `LICENSE` for more information.
